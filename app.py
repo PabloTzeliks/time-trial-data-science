@@ -311,30 +311,6 @@ else:
 st.markdown("---")
 
 
-# ─────────────────────────────────────────────
-#  4. MATRIZ DE CORRELAÇÃO
-# ─────────────────────────────────────────────
-st.markdown("### 🌡️ 4. Matriz de Correlação")
-st.markdown("""<div class="ds-insight">
-  <strong>💡 Insight de DS:</strong> Valores próximos de <strong>+1</strong> = correlação positiva forte.
-  Próximos de <strong>-1</strong> = inversa (mais voltas → aprende e fica mais rápido?).
-  Próximos de <strong>0</strong> = sem relação aparente.
-</div>""", unsafe_allow_html=True)
-
-cols_corr   = ["tempo_medio","desvio_padrao","total_voltas","melhor_volta"]
-labels_corr = ["Tempo Médio","Desvio Padrão","Total Voltas","Melhor Volta"]
-corr        = df_feat[cols_corr].corr().round(2)
-
-fig_hm = go.Figure(data=go.Heatmap(
-    z=corr.values, x=labels_corr, y=labels_corr,
-    colorscale=[[0.0,"#0d0d0d"],[0.5,"#555555"],[1.0,"#e73735"]],
-    zmin=-1, zmax=1,
-    text=corr.values, texttemplate="%{text}",
-    textfont=dict(family="Orbitron", size=13, color="#ffffff"),
-))
-fig_hm.update_layout(**PL, margin=dict(l=0,r=0,t=20,b=0), height=380)
-st.plotly_chart(fig_hm, use_container_width=True)
-st.markdown("---")
 
 #  EXTRA — Performance & Engajamento
 if "show_perf" not in st.session_state:
