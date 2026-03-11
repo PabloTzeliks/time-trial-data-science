@@ -8,9 +8,7 @@ from scipy.stats import gaussian_kde
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
-# ─────────────────────────────────────────────
 #  CONFIG & TEMA
-# ─────────────────────────────────────────────
 st.set_page_config(
     page_title="Time Trial Analytics",
     page_icon="🏁",
@@ -117,16 +115,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-# ─────────────────────────────────────────────
 #  CARREGAR E PROCESSAR DADOS DA API
-#
-#  A API retorna lista de pings RFID:
-#    { "rfid": "58 59 5A 5B", "timestamp_ms": 562655 }
-#
-#  O tempo de volta é calculado como a diferença
-#  entre timestamps consecutivos do mesmo RFID.
-# ─────────────────────────────────────────────
 @st.cache_data(ttl=30)
 def carregar_dados() -> pd.DataFrame | None:
     try:
@@ -168,9 +157,7 @@ def features_por_carro(df: pd.DataFrame) -> pd.DataFrame:
               .reset_index().fillna(0))
 
 
-# ─────────────────────────────────────────────
 #  PALETA & LAYOUT PLOTLY
-# ─────────────────────────────────────────────
 CORES = ["#e73735", "#ffffff", "#ff8a89", "#aaaaaa",
          "#cc2220", "#ff5553", "#dddddd", "#888888"]
 
@@ -183,10 +170,7 @@ PL = dict(
     yaxis=dict(gridcolor="#1f1f1f", linecolor="#333333"),
 )
 
-
-# ─────────────────────────────────────────────
 #  CABEÇALHO
-# ─────────────────────────────────────────────
 st.markdown("""
 <div style='text-align:center; padding: 1.5rem 0 0.5rem'>
   <span style='font-family:Orbitron,sans-serif; font-size:2.2rem; font-weight:900; color:#e73735; letter-spacing:0.1em'>
@@ -219,10 +203,7 @@ if df is None or df.empty:
 df_feat = features_por_carro(df)
 st.markdown("---")
 
-
-# ─────────────────────────────────────────────
 #  CARDS DE RESUMO
-# ─────────────────────────────────────────────
 st.markdown("### 📡 Resumo Geral")
 melhor = df.loc[df["tempo_segundos"].idxmin()]
 c1, c2, c3, c4 = st.columns(4)
@@ -232,10 +213,7 @@ c3.metric("🔄 Total de Voltas",  str(len(df)))
 c4.metric("🚗 Carros na Pista",  str(df["rfid"].nunique()))
 st.markdown("---")
 
-
-# ─────────────────────────────────────────────
 #  1. HISTOGRAMA + KDE
-# ─────────────────────────────────────────────
 st.markdown("### 📊 1. Curva de Distribuição dos Tempos de Volta")
 st.markdown("""<div class="ds-insight">
   <strong>💡 Insight de DS:</strong> Um pico único em sino indica pilotos com perfil similar.
@@ -257,10 +235,7 @@ fig_hist.update_layout(**PL, margin=dict(l=0,r=0,t=20,b=0))
 st.plotly_chart(fig_hist, use_container_width=True)
 st.markdown("---")
 
-
-# ─────────────────────────────────────────────
 #  2. BOXPLOT + ANOMALIAS
-# ─────────────────────────────────────────────
 st.markdown("### 📦 2. Consistência e Anomalias por Carro (Boxplot)")
 st.markdown("""<div class="ds-insight">
   <strong>💡 Insight de DS:</strong> A caixa mostra 50% das voltas (Q1→Q3); a linha central é a <strong>mediana</strong>.
@@ -298,10 +273,7 @@ if st.session_state.show_outliers:
         use_container_width=True)
 st.markdown("---")
 
-
-# ─────────────────────────────────────────────
 #  3. K-MEANS CLUSTERING
-# ─────────────────────────────────────────────
 st.markdown("### 🤖 3. Agrupamento de Estilos de Pilotagem (K-Means)")
 st.markdown("""<div class="ds-insight">
   <strong>💡 Insight de DS:</strong> Cruzando <strong>Tempo Médio</strong> (velocidade) com
@@ -340,8 +312,31 @@ st.markdown("---")
 
 
 # ─────────────────────────────────────────────
-#  EXTRA — Performance & Engajamento
+#  4. MATRIZ DE CORRELAÇÃO
 # ─────────────────────────────────────────────
+st.markdown("### 🌡️ 4. Matriz de Correlação")
+st.markdown("""<div class="ds-insight">
+  <strong>💡 Insight de DS:</strong> Valores próximos de <strong>+1</strong> = correlação positiva forte.
+  Próximos de <strong>-1</strong> = inversa (mais voltas → aprende e fica mais rápido?).
+  Próximos de <strong>0</strong> = sem relação aparente.
+</div>""", unsafe_allow_html=True)
+
+cols_corr   = ["tempo_medio","desvio_padrao","total_voltas","melhor_volta"]
+labels_corr = ["Tempo Médio","Desvio Padrão","Total Voltas","Melhor Volta"]
+corr        = df_feat[cols_corr].corr().round(2)
+
+fig_hm = go.Figure(data=go.Heatmap(
+    z=corr.values, x=labels_corr, y=labels_corr,
+    colorscale=[[0.0,"#0d0d0d"],[0.5,"#555555"],[1.0,"#e73735"]],
+    zmin=-1, zmax=1,
+    text=corr.values, texttemplate="%{text}",
+    textfont=dict(family="Orbitron", size=13, color="#ffffff"),
+))
+fig_hm.update_layout(**PL, margin=dict(l=0,r=0,t=20,b=0), height=380)
+st.plotly_chart(fig_hm, use_container_width=True)
+st.markdown("---")
+
+#  EXTRA — Performance & Engajamento
 if "show_perf" not in st.session_state:
     st.session_state.show_perf = False
 if st.button("▼ Ver Evolução de Performance e Engajamento" if not st.session_state.show_perf else "▲ Fechar gráficos"):
